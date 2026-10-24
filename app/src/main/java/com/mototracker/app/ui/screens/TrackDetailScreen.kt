@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.mototracker.app.data.db.TrackEntity
 import com.mototracker.app.data.db.TrackPointEntity
 import com.mototracker.app.di.ServiceLocator
+import com.mototracker.app.ui.components.StatCell
 import com.mototracker.app.ui.map.MotoMap
 import com.mototracker.app.util.Format
 import com.mototracker.app.util.GeoUtils

@@ -180,7 +180,7 @@ object TrackRecorder {
 
     private suspend fun process(location: Location) {
         val settings = ServiceLocator.settingsRepository.current()
-        val accuracy = location.accuracy.coerceAtLeast(0.0)
+        val accuracy = location.accuracy.coerceAtLeast(0f).toDouble()
         val fixAge = System.currentTimeMillis() - location.time
 
         val state = TrackingBus.state.value

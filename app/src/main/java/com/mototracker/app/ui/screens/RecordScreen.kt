@@ -62,6 +62,7 @@ import com.mototracker.app.tracker.LiveState
 import com.mototracker.app.tracker.TrackRecorder
 import com.mototracker.app.tracker.TrackingBus
 import com.mototracker.app.tracker.TrackingStatus
+import com.mototracker.app.ui.components.StatCell
 import com.mototracker.app.ui.map.MotoMap
 import com.mototracker.app.util.Format
 import com.mototracker.app.util.SpeedGradient
@@ -278,22 +279,6 @@ private fun GpsBadge(state: LiveState, threshold: Double) {
             Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             color = color,
             style = MaterialTheme.typography.labelMedium
-        )
-    }
-}
-
-@Composable
-private fun StatCell(label: String, value: String) {
-    Column {
-        Text(
-            value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

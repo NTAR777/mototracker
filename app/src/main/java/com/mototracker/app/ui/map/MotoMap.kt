@@ -7,6 +7,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -15,19 +16,20 @@ import com.mototracker.app.R
 import com.mototracker.app.data.db.TrackPointEntity
 import com.mototracker.app.tracker.LivePoint
 import com.mototracker.app.util.SpeedGradient
-import com.yandex.mapkit.animation.Animation
+import com.yandex.mapkit.Animation
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.geometry.Polyline
+import com.yandex.mapkit.map.CameraListener
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.CameraUpdateReason
 import com.yandex.mapkit.map.IconStyle
-import com.yandex.mapkit.map.MapInputListener
 import com.yandex.mapkit.map.MapObjectCollection
 import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.map.RotationType
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.image.ImageProvider
+import java.lang.ref.WeakReference
 import kotlin.math.ceil
 
 /**
@@ -55,23 +57,20 @@ fun MotoMap(
     }
 
     // Реакция на жесты пользователя: выключаем слежение, чтобы не драться за камеру.
+    val dragCallback by rememberUpdatedState(onUserDragged)
     DisposableEffect(Unit) {
-        val listener = object : MapInputListener {
+        val listener = object : CameraListener {
             override fun onCameraPositionChanged(
                 map: com.yandex.mapkit.map.Map,
                 cameraPosition: CameraPosition,
                 cameraUpdateReason: CameraUpdateReason,
                 finished: Boolean
             ) {
-                if (cameraUpdateReason == CameraUpdateReason.GESTURES) onUserDragged()
+                if (cameraUpdateReason == CameraUpdateReason.GESTURES) dragCallback()
             }
-
-            override fun onMapTap(map: com.yandex.mapkit.map.Map, point: Point) = Unit
-
-            override fun onMapLongTap(map: com.yandex.mapkit.map.Map, point: Point) = Unit
         }
-        map.addCameraInputListener(listener)
-        onDispose { map.removeCameraInputListener(listener) }
+        map.addCameraListener(WeakReference(listener))
+        onDispose { map.removeCameraListener(WeakReference(listener)) }
     }
 
     var lineObj by remember { mutableStateOf<PolylineMapObject?>(null) }
@@ -96,7 +95,7 @@ fun MotoMap(
             for (i in 0 until display.size - 1) {
                 colors.add(SpeedGradient.colorFor((display[i].speedKmh + display[i + 1].speedKmh) / 2.0))
             }
-            obj.strokeColors = colors
+            obj.setStrokeColors(colors)
             lineObj = obj
         }
     }
@@ -135,7 +134,7 @@ fun MotoMap(
             markerObj = placemark
         }
         markerObj?.geometry = Point(lp.lat, lp.lon)
-        markerObj?.rotationAngle = lp.bearingDeg.toFloat()
+        markerObj?.direction = lp.bearingDeg.toFloat()
     }
 
     // Первичное центрирование.
