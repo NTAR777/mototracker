@@ -5,7 +5,9 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -80,6 +82,10 @@ fun RecordScreen(onOpenSpeedometer: () -> Unit) {
     val settings by ServiceLocator.settingsRepository.settings.collectAsStateWithLifecycle()
 
     var hasPermission by remember { mutableStateOf(hasLocationPermission(context)) }
+    // Если пользователь выбрал «Приблизительное местоположение» — точный GPS не заработает.
+    val coarseOnly = !hasPermission &&
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+        PackageManager.PERMISSION_GRANTED
     var followUser by remember { mutableStateOf(true) }
     var showStopDialog by remember { mutableStateOf(false) }
 
@@ -190,15 +196,34 @@ fun RecordScreen(onOpenSpeedometer: () -> Unit) {
                 shape = RoundedCornerShape(20.dp)
             ) {
                 Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Нужен доступ к геолокации", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        if (coarseOnly) "Нужно точное местоположение" else "Нужен доступ к геолокации",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Без него приложение не сможет записывать маршрут и показывать спидометр.",
+                        if (coarseOnly) {
+                            "Сейчас выдано только «Приблизительное местоположение» — GPS-спидометр и запись с ним не работают. Открой настройки приложения → Разрешения → Геоданные и выбери «Точное местоположение»."
+                        } else {
+                            "Без него приложение не сможет записывать маршрут и показывать спидометр. В диалоге выбирай «Точное местоположение»."
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(12.dp))
-                    Button(onClick = requestPermissions) { Text("Разрешить") }
+                    if (coarseOnly) {
+                        Button(onClick = {
+                            try {
+                                context.startActivity(
+                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                        .setData(Uri.parse("package:${context.packageName}"))
+                                )
+                            } catch (_: Exception) {
+                            }
+                        }) { Text("Открыть настройки") }
+                    } else {
+                        Button(onClick = requestPermissions) { Text("Разрешить") }
+                    }
                 }
             }
         }
@@ -268,6 +293,14 @@ private fun TopStats(
                 StatCell("Ср. движ.", Format.avg(state.avgMovingKmh))
                 StatCell("Ср. общ.", Format.avg(state.avgTotalKmh))
                 StatCell("Макс", Format.avg(state.maxSpeedKmh))
+            }
+            state.gpsError?.let {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
         }
     }
@@ -406,6 +439,4 @@ private fun Controls(
 
 private fun hasLocationPermission(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-        PackageManager.PERMISSION_GRANTED ||
-        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
         PackageManager.PERMISSION_GRANTED

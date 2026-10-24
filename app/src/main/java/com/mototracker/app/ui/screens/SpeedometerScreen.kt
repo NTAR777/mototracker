@@ -48,6 +48,7 @@ fun SpeedometerScreen(onBack: () -> Unit) {
     }
 
     val hasFix = state.fixAgeMs in 0..4000
+    val gpsError = state.gpsError
 
     Column(
         Modifier
@@ -95,8 +96,13 @@ fun SpeedometerScreen(onBack: () -> Unit) {
             onClick = {},
             label = {
                 Text(
-                    if (hasFix) "GPS ±${state.accuracyM.coerceAtMost(99.0).toInt()} м"
-                    else "Нет сигнала GPS"
+                    when {
+                        gpsError != null -> gpsError
+                        hasFix -> "GPS ±${state.accuracyM.coerceAtMost(99.0).toInt()} м"
+                        else -> "Нет сигнала GPS"
+                    },
+                    color = if (gpsError != null) MaterialTheme.colorScheme.error
+                    else androidx.compose.ui.graphics.Color.Unspecified
                 )
             }
         )

@@ -37,7 +37,9 @@ data class LiveState(
     val fixAgeMs: Long = -1L,
     val altitudeM: Double? = null,
     val lastPoint: LivePoint? = null,
-    val pointsCount: Int = 0
+    val pointsCount: Int = 0,
+    /** Причина, по которой GPS-поток не работает (нет разрешения / выключена геолокация). */
+    val gpsError: String? = null
 ) {
     /** Средняя скорость в движении (стоянки и паузы исключены). */
     val avgMovingKmh: Double
