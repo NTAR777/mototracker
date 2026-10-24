@@ -1,0 +1,5 @@
+# Скопируй этот файл в local.properties и впиши свой ключ.
+# (local.properties в .gitignore — ключ не уедет в репозиторий)
+
+# sdk.dir=/home/mihail/Android/Sdk
+MAPKIT_API_KEY=вставь_сюда_ключ_от_developer.tech.yandex.ru
