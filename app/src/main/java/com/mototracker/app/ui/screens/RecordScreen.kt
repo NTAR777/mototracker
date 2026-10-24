@@ -59,6 +59,7 @@ import com.google.android.gms.location.LocationServices
 import com.mototracker.app.di.ServiceLocator
 import com.mototracker.app.service.LocationService
 import com.mototracker.app.tracker.LiveState
+import com.mototracker.app.tracker.LiveGpsClient
 import com.mototracker.app.tracker.TrackRecorder
 import com.mototracker.app.tracker.TrackingBus
 import com.mototracker.app.tracker.TrackingStatus
@@ -105,6 +106,15 @@ fun RecordScreen(onOpenSpeedometer: () -> Unit) {
         }
         onDispose {
             activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    // После остановки записи — снова включаем UI-поток GPS (сервис уже отдал обновления).
+    LaunchedEffect(state.status) {
+        if (state.status == TrackingStatus.IDLE) {
+            LiveGpsClient.start(context)
+        } else {
+            LiveGpsClient.stop()
         }
     }
 
@@ -304,7 +314,7 @@ private fun Controls(
                 .padding(16.dp)
         ) {
             when (status) {
-                TrackingStatus.IDLE -> {
+                TrackingStatus.IDLE, TrackingStatus.STANDBY -> {
                     Button(
                         onClick = onStart,
                         enabled = enabled,

@@ -5,7 +5,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-enum class TrackingStatus { IDLE, RECORDING, PAUSED }
+/** IDLE — приложение ничего не слушает; STANDBY — живой GPS для UI без записи. */
+enum class TrackingStatus { IDLE, STANDBY, RECORDING, PAUSED }
 
 /** Точка, которую UI рисует на карте как текущую позицию. */
 data class LivePoint(

@@ -1,6 +1,7 @@
 package com.mototracker.app.tracker
 
 import android.location.Location
+import android.os.SystemClock
 import android.util.Log
 import com.mototracker.app.data.db.TrackEntity
 import com.mototracker.app.data.db.TrackPointEntity
@@ -37,7 +38,6 @@ object TrackRecorder {
     private const val STANDING_SPEED_MS = 0.6    // ~2.2 км/ч — «стоим»
     private const val RESUME_SPEED_MS = 1.5      // ~5.4 км/ч — сняться с автопаузы
     private const val STALE_FIX_MS = 8_000L
-    private const val FUTURE_FIX_MS = 2_000L
     private const val STATS_FLUSH_MS = 5_000L
     private const val MAX_DT_SEC = 10.0
     private const val STANDING_SAVE_INTERVAL_MS = 5_000L
@@ -181,7 +181,8 @@ object TrackRecorder {
     private suspend fun process(location: Location) {
         val settings = ServiceLocator.settingsRepository.current()
         val accuracy = location.accuracy.coerceAtLeast(0f).toDouble()
-        val fixAge = System.currentTimeMillis() - location.time
+        // Возраст фикса по monotonic-часам: не зависит от «плывущего» времени GPS.
+        val fixAgeMs = (SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos) / 1_000_000L
 
         val state = TrackingBus.state.value
         if (state.status == TrackingStatus.PAUSED) {
@@ -198,7 +199,7 @@ object TrackRecorder {
 
         // --- фильтрация мусора ------------------------------------------------
         if (accuracy > settings.accuracyThresholdM) return
-        if (fixAge < -FUTURE_FIX_MS || fixAge > STALE_FIX_MS) return
+        if (fixAgeMs > STALE_FIX_MS) return
 
         var dtSec = 0.0
         var distM = 0.0
@@ -296,7 +297,7 @@ object TrackRecorder {
                 movingTimeSec = movingTimeSec,
                 maxSpeedKmh = maxSpeedKmh,
                 accuracyM = accuracy,
-                fixAgeMs = fixAge,
+                fixAgeMs = fixAgeMs,
                 altitudeM = if (location.hasAltitude()) location.altitude else state.altitudeM,
                 lastPoint = LivePoint(
                     lat = location.latitude,

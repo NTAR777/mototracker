@@ -67,6 +67,7 @@ fun SpeedometerScreen(onBack: () -> Unit) {
                 when (state.status) {
                     TrackingStatus.RECORDING -> "Запись"
                     TrackingStatus.PAUSED -> if (state.autoPaused) "Автопауза" else "Пауза"
+                    TrackingStatus.STANDBY -> "Готов"
                     TrackingStatus.IDLE -> "Без записи"
                 },
                 style = MaterialTheme.typography.titleMedium
