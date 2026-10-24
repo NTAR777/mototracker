@@ -92,8 +92,8 @@ fun RecordScreen(onOpenSpeedometer: () -> Unit) {
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { grants ->
-        hasPermission = grants[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-            grants[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        // Только точное местоположение делает возможным GPS-спидометр и запись.
+        hasPermission = grants[Manifest.permission.ACCESS_FINE_LOCATION] == true
     }
 
     val requestPermissions: () -> Unit = {
@@ -106,7 +106,9 @@ fun RecordScreen(onOpenSpeedometer: () -> Unit) {
 
     // Экран не гаснет во время записи (и если включено в настройках — всегда).
     DisposableEffect(activity, settings.keepScreenOn, state.status) {
-        val shouldKeep = settings.keepScreenOn || state.status != TrackingStatus.IDLE
+        val shouldKeep = settings.keepScreenOn ||
+            state.status == TrackingStatus.RECORDING ||
+            state.status == TrackingStatus.PAUSED
         if (activity != null && shouldKeep) {
             activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
