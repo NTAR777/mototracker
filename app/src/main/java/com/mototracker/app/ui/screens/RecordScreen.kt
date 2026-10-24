@@ -117,12 +117,12 @@ fun RecordScreen(onOpenSpeedometer: () -> Unit) {
         }
     }
 
-    // После остановки записи — снова включаем UI-поток GPS (сервис уже отдал обновления).
+    // UI-поток GPS жив во всех состояниях, кроме активной записи:
+    // во время записи позицию отдаёт LocationService.
     LaunchedEffect(state.status) {
-        if (state.status == TrackingStatus.IDLE) {
-            LiveGpsClient.start(context)
-        } else {
-            LiveGpsClient.stop()
+        when (state.status) {
+            TrackingStatus.RECORDING, TrackingStatus.PAUSED -> LiveGpsClient.stop()
+            else -> LiveGpsClient.start(context)
         }
     }
 
@@ -311,9 +311,11 @@ private fun TopStats(
 @Composable
 private fun GpsBadge(state: LiveState, threshold: Double) {
     val (text, color) = when {
-        state.fixAgeMs > 4000L || state.accuracyM > threshold ->
-            "Слабый GPS" to MaterialTheme.colorScheme.error
-        else -> "±${state.accuracyM.toInt()} м" to MaterialTheme.colorScheme.primary
+        state.fixAgeMs < 0 -> "Ждём сигнал GPS…" to MaterialTheme.colorScheme.onSurfaceVariant
+        state.fixAgeMs > 8000L -> "Нет свежего GPS" to MaterialTheme.colorScheme.error
+        state.accuracyM > threshold ->
+            "Слабый GPS ±${state.accuracyM.coerceAtMost(999.0).toInt()} м" to MaterialTheme.colorScheme.error
+        else -> "±${state.accuracyM.coerceAtMost(999.0).toInt()} м" to MaterialTheme.colorScheme.primary
     }
     Surface(
         shape = RoundedCornerShape(50),

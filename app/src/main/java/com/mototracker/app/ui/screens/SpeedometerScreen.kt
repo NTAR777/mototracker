@@ -47,7 +47,7 @@ fun SpeedometerScreen(onBack: () -> Unit) {
         }
     }
 
-    val hasFix = state.fixAgeMs in 0..4000
+    val hasFix = state.fixAgeMs in 0..8000
     val gpsError = state.gpsError
 
     Column(

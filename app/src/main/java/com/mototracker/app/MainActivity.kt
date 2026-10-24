@@ -28,7 +28,9 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         MapKitFactory.getInstance().onStart()
         // GPS для UI (спидометр, стрелка на карте) — сразу, без записи.
-        if (TrackingBus.state.value.status == TrackingStatus.IDLE) {
+        // Во время записи поток держит LocationService.
+        val status = TrackingBus.state.value.status
+        if (status != TrackingStatus.RECORDING && status != TrackingStatus.PAUSED) {
             LiveGpsClient.start(applicationContext)
         }
     }
