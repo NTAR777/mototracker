@@ -1,5 +1,8 @@
 package com.mototracker.app.ui.map
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.PointF
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -12,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import com.mototracker.app.R
 import com.mototracker.app.data.db.TrackPointEntity
 import com.mototracker.app.tracker.LivePoint
@@ -108,11 +112,11 @@ fun MotoMap(
         endObj = null
         if (showStartEndMarkers && points.isNotEmpty()) {
             startObj = map.mapObjects.addPlacemark(Point(points.first().lat, points.first().lon)).apply {
-                setIcon(ImageProvider.fromResource(context, R.drawable.ic_point_start))
+                setIcon(ImageProvider.fromBitmap(drawableToBitmap(context, R.drawable.ic_point_start, 16)))
                 zIndex = 20f
             }
             endObj = map.mapObjects.addPlacemark(Point(points.last().lat, points.last().lon)).apply {
-                setIcon(ImageProvider.fromResource(context, R.drawable.ic_point_end))
+                setIcon(ImageProvider.fromBitmap(drawableToBitmap(context, R.drawable.ic_point_end, 16)))
                 zIndex = 20f
             }
         }
@@ -123,7 +127,7 @@ fun MotoMap(
         val lp = livePoint ?: return@LaunchedEffect
         if (markerObj == null) {
             val placemark = map.mapObjects.addPlacemark(Point(lp.lat, lp.lon))
-            placemark.setIcon(ImageProvider.fromResource(context, R.drawable.ic_user_arrow))
+            placemark.setIcon(ImageProvider.fromBitmap(drawableToBitmap(context, R.drawable.ic_user_arrow, 28)))
             placemark.setIconStyle(
                 IconStyle().apply {
                     rotationType = RotationType.ROTATE
@@ -162,6 +166,18 @@ fun MotoMap(
     }
 
     AndroidView(modifier = modifier, factory = { mapView })
+}
+
+/** MapKit не рисует vector-drawable в метках — рендерим иконку в bitmap сами. */
+private fun drawableToBitmap(context: Context, resId: Int, sizeDp: Int): Bitmap {
+    val drawable = ContextCompat.getDrawable(context, resId)
+        ?: error("Drawable not found: $resId")
+    val px = (sizeDp * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+    val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bmp)
+    drawable.setBounds(0, 0, px, px)
+    drawable.draw(canvas)
+    return bmp
 }
 
 /** Режем длинные треки для отображения, чтобы не грузить карту тысячами точек. */
